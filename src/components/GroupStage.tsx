@@ -230,7 +230,7 @@ export const GroupStage: React.FC = () => {
                               <div className="flex-1 flex items-center gap-1.5 overflow-hidden">
                                 <span className="text-md select-none">{home.flag}</span>
                                 <span className="font-semibold text-slate-200 truncate pr-1">
-                                  {home.id}
+                                  {home.name}
                                 </span>
                               </div>
 
@@ -266,7 +266,7 @@ export const GroupStage: React.FC = () => {
                               {/* Away Team */}
                               <div className="flex-1 flex items-center justify-end gap-1.5 overflow-hidden">
                                 <span className="font-semibold text-slate-200 truncate pl-1">
-                                  {away.id}
+                                  {away.name}
                                 </span>
                                 <span className="text-md select-none">{away.flag}</span>
                               </div>
