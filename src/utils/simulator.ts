@@ -135,6 +135,26 @@ export function generateInitialKnockoutMatches(): KnockoutMatch[] {
   const matches: KnockoutMatch[] = [];
 
   // Round of 32 (16 matches: match-r32-1 to match-r32-16)
+  // Labels reflect the new bracket pairing scheme
+  const r32Labels = [
+    '1E vs 3(A/B/C/D/F)',      // R32-1
+    '1I vs 3(C/D/F/G/H)',      // R32-2
+    '2A vs 2B',                 // R32-3
+    '1F vs 2C',                 // R32-4
+    '2K vs 2L',                 // R32-5
+    '1H vs 2J',                 // R32-6
+    '1D vs 3(B/E/F/I/J)',      // R32-7
+    '1G vs 3(A/E/H/I/J)',      // R32-8
+    '1C vs 2F',                 // R32-9
+    '2E vs 2I',                 // R32-10
+    '1A vs 3(C/E/F/H/I)',      // R32-11
+    '1L vs 3(E/H/I/J/K)',      // R32-12
+    '1J vs 2H',                 // R32-13
+    '2D vs 2G',                 // R32-14
+    '1B vs 3(E/F/G/I/J)',      // R32-15
+    '1K vs 3(D/E/I/J/L)',      // R32-16
+  ];
+
   for (let i = 1; i <= 16; i++) {
     matches.push({
       id: `match-r32-${i}`,
@@ -147,7 +167,7 @@ export function generateInitialKnockoutMatches(): KnockoutMatch[] {
       awayPenalties: null,
       winnerId: null,
       played: false,
-      label: `Dieciseisavo ${i}`,
+      label: r32Labels[i - 1],
     });
   }
 
@@ -414,24 +434,19 @@ export function calculateThirdPlaceStandings(
 
 // Simulate goals between two teams based on FIFA Ranking
 export function simulateGoals(teamA: Team, teamB: Team): { homeG: number; awayG: number } {
-  // Let's create a realistic strength rating: lower rank (e.g., 1) is better.
   const rA = teamA.fifaRanking;
   const rB = teamB.fifaRanking;
 
-  // Let's base expected goals on hierarchy:
-  // Best teams score slightly more and concede less.
-  let lambdaA = 1.35; // base expected goals
+  let lambdaA = 1.35;
   let lambdaB = 1.35;
 
-  const rankDiff = rB - rA; // Positive if A is better ranked than B
+  const rankDiff = rB - rA;
 
   if (rankDiff > 0) {
-    // Team A is better ranked
     const strengthBonus = Math.min(2.5, rankDiff / 18);
     lambdaA += strengthBonus * 0.70;
     lambdaB -= strengthBonus * 0.15;
   } else {
-    // Team B is better ranked
     const strengthBonus = Math.min(2.5, -rankDiff / 18);
     lambdaB += strengthBonus * 0.70;
     lambdaA -= strengthBonus * 0.15;
@@ -440,7 +455,6 @@ export function simulateGoals(teamA: Team, teamB: Team): { homeG: number; awayG:
   lambdaA = Math.max(0.4, lambdaA);
   lambdaB = Math.max(0.4, lambdaB);
 
-  // Generate scores using Poisson-like simple approximation with random spreads
   const randomPoisson = (lambda: number): number => {
     let L = Math.exp(-lambda);
     let k = 0;
@@ -455,7 +469,6 @@ export function simulateGoals(teamA: Team, teamB: Team): { homeG: number; awayG:
   let homeG = randomPoisson(lambdaA);
   let awayG = randomPoisson(lambdaB);
 
-  // Check for crazy outliers to keep scores realistic (max 7-8 goals per team)
   homeG = Math.min(7, homeG);
   awayG = Math.min(7, awayG);
 
@@ -475,45 +488,48 @@ export function updateKnockoutStage(
   const get1st = (g: string) => groupStandings[g]?.[0]?.teamId || null;
   const get2nd = (g: string) => groupStandings[g]?.[1]?.teamId || null;
 
-  // 8 qualified thirds, sorted
+  // 8 best third-place teams, sorted by ranking
   const t3 = bestThirds.slice(0, 8).map((s) => s.teamId);
 
-  // --- 1. ROUND OF 32 PAIRINGS ---
-  // R32 Matches mapper:
-  // Match 1: 2A vs 2B
-  // Match 2: 1C vs 2F
-  // Match 3: 1E vs best 3rd #1
-  // Match 4: 1I vs best 3rd #2
-  // Match 5: 2E vs 2I
-  // Match 6: 1F vs 2C
-  // Match 7: 1A vs best 3rd #3
-  // Match 8: 1L vs best 3rd #4
-  // Match 9: 1G vs best 3rd #5
-  // Match 10: 1D vs best 3rd #6
-  // Match 11: 1H vs 2J
-  // Match 12: 2K vs 2L
-  // Match 13: 1B vs best 3rd #7
-  // Match 14: 2D vs 2G
-  // Match 15: 1J vs 2H
-  // Match 16: 1K vs best 3rd #8
+  // --- 1. ROUND OF 32 PAIRINGS (new bracket scheme) ---
+  //
+  // Bracket left side (feeds into R16 matches 1-4, QF 1-2, SF 1):
+  //   R32-1:  1E  vs  3(A/B/C/D/F)       → t3[0]
+  //   R32-2:  1I  vs  3(C/D/F/G/H)       → t3[1]
+  //   R32-3:  2A  vs  2B
+  //   R32-4:  1F  vs  2C
+  //   R32-5:  2K  vs  2L
+  //   R32-6:  1H  vs  2J
+  //   R32-7:  1D  vs  3(B/E/F/I/J)       → t3[2]
+  //   R32-8:  1G  vs  3(A/E/H/I/J)       → t3[3]
+  //
+  // Bracket right side (feeds into R16 matches 5-8, QF 3-4, SF 2):
+  //   R32-9:  1C  vs  2F
+  //   R32-10: 2E  vs  2I
+  //   R32-11: 1A  vs  3(C/E/F/H/I)       → t3[4]
+  //   R32-12: 1L  vs  3(E/H/I/J/K)       → t3[5]
+  //   R32-13: 1J  vs  2H
+  //   R32-14: 2D  vs  2G
+  //   R32-15: 1B  vs  3(E/F/G/I/J)       → t3[6]
+  //   R32-16: 1K  vs  3(D/E/I/J/L)       → t3[7]
 
   const r32Schematic = [
-    { home: get2nd('A'), away: get2nd('B') }, // R32-1
-    { home: get1st('C'), away: get2nd('F') }, // R32-2
-    { home: get1st('E'), away: t3[0] || null },  // R32-3
-    { home: get1st('I'), away: t3[1] || null },  // R32-4
-    { home: get2nd('E'), away: get2nd('I') }, // R32-5
-    { home: get1st('F'), away: get2nd('C') }, // R32-6
-    { home: get1st('A'), away: t3[2] || null },  // R32-7
-    { home: get1st('L'), away: t3[3] || null },  // R32-8
-    { home: get1st('G'), away: t3[4] || null },  // R32-9
-    { home: get1st('D'), away: t3[5] || null },  // R32-10
-    { home: get1st('H'), away: get2nd('J') }, // R32-11
-    { home: get2nd('K'), away: get2nd('L') }, // R32-12
-    { home: get1st('B'), away: t3[6] || null },  // R32-13
-    { home: get2nd('D'), away: get2nd('G') }, // R32-14
-    { home: get1st('J'), away: get2nd('H') }, // R32-15
-    { home: get1st('K'), away: t3[7] || null },  // R32-16
+    { home: get1st('E'), away: t3[0] || null },   // R32-1
+    { home: get1st('I'), away: t3[1] || null },   // R32-2
+    { home: get2nd('A'), away: get2nd('B') },      // R32-3
+    { home: get1st('F'), away: get2nd('C') },      // R32-4
+    { home: get2nd('K'), away: get2nd('L') },      // R32-5
+    { home: get1st('H'), away: get2nd('J') },      // R32-6
+    { home: get1st('D'), away: t3[2] || null },   // R32-7
+    { home: get1st('G'), away: t3[3] || null },   // R32-8
+    { home: get1st('C'), away: get2nd('F') },      // R32-9
+    { home: get2nd('E'), away: get2nd('I') },      // R32-10
+    { home: get1st('A'), away: t3[4] || null },   // R32-11
+    { home: get1st('L'), away: t3[5] || null },   // R32-12
+    { home: get1st('J'), away: get2nd('H') },      // R32-13
+    { home: get2nd('D'), away: get2nd('G') },      // R32-14
+    { home: get1st('B'), away: t3[6] || null },   // R32-15
+    { home: get1st('K'), away: t3[7] || null },   // R32-16
   ];
 
   // Apply to R32
@@ -521,14 +537,12 @@ export function updateKnockoutStage(
     const match = updated.find((m) => m.id === `match-r32-${idx + 1}`);
     if (match) {
       const scheme = r32Schematic[idx];
-      // Keep existing scores but update home/away IDs
       const rawHomeChanged = match.homeTeamId !== scheme.home;
       const rawAwayChanged = match.awayTeamId !== scheme.away;
 
       match.homeTeamId = scheme.home;
       match.awayTeamId = scheme.away;
 
-      // If teams shifted, clear result
       if (rawHomeChanged || rawAwayChanged) {
         match.homeGoals = null;
         match.awayGoals = null;
@@ -537,7 +551,6 @@ export function updateKnockoutStage(
         match.played = false;
         match.winnerId = null;
       } else if (match.played && match.homeGoals !== null && match.awayGoals !== null) {
-        // Recalculate winner to be bulletproof
         if (match.homeGoals > match.awayGoals) {
           match.winnerId = match.homeTeamId;
         } else if (match.awayGoals > match.homeGoals) {
@@ -551,7 +564,7 @@ export function updateKnockoutStage(
     }
   }
 
-  // Helper to carry forward results from a specific matches pair
+  // Helper to get winner/loser from a match
   const getWinner = (mId: string) => updated.find((m) => m.id === mId)?.winnerId || null;
   const getLoser = (mId: string) => {
     const match = updated.find((m) => m.id === mId);
@@ -560,14 +573,16 @@ export function updateKnockoutStage(
   };
 
   // --- 2. ROUND OF 16 (8 MATCHES) ---
-  // match-r16-1: winner R32-1 vs winner R32-2
-  // match-r16-2: winner R32-3 vs winner R32-4
-  // match-r16-3: winner R32-5 vs winner R32-6
-  // match-r16-4: winner R32-7 vs winner R32-8
-  // match-r16-5: winner R32-9 vs winner R32-10
-  // match-r16-6: winner R32-11 vs winner R32-12
-  // match-r16-7: winner R32-13 vs winner R32-14
-  // match-r16-8: winner R32-15 vs winner R32-16
+  // Bracket left side:
+  //   R16-1: winner R32-1  vs winner R32-2
+  //   R16-2: winner R32-3  vs winner R32-4
+  //   R16-3: winner R32-5  vs winner R32-6
+  //   R16-4: winner R32-7  vs winner R32-8
+  // Bracket right side:
+  //   R16-5: winner R32-9  vs winner R32-10
+  //   R16-6: winner R32-11 vs winner R32-12
+  //   R16-7: winner R32-13 vs winner R32-14
+  //   R16-8: winner R32-15 vs winner R32-16
   for (let idx = 0; idx < 8; idx++) {
     const match = updated.find((m) => m.id === `match-r16-${idx + 1}`);
     if (match) {
@@ -592,10 +607,10 @@ export function updateKnockoutStage(
   }
 
   // --- 3. QUARTER-FINALS (4 MATCHES) ---
-  // match-qf-1: winner R16-1 vs winner R16-2
-  // match-qf-2: winner R16-3 vs winner R16-4
-  // match-qf-3: winner R16-5 vs winner R16-6
-  // match-qf-4: winner R16-7 vs winner R16-8
+  // QF-1: winner R16-1 vs winner R16-2
+  // QF-2: winner R16-3 vs winner R16-4
+  // QF-3: winner R16-5 vs winner R16-6
+  // QF-4: winner R16-7 vs winner R16-8
   for (let idx = 0; idx < 4; idx++) {
     const match = updated.find((m) => m.id === `match-qf-${idx + 1}`);
     if (match) {
@@ -620,8 +635,8 @@ export function updateKnockoutStage(
   }
 
   // --- 4. SEMI-FINALS (2 MATCHES) ---
-  // match-sf-1: winner QF-1 vs winner QF-2
-  // match-sf-2: winner QF-3 vs winner QF-4
+  // SF-1: winner QF-1 vs winner QF-2
+  // SF-2: winner QF-3 vs winner QF-4
   for (let idx = 0; idx < 2; idx++) {
     const match = updated.find((m) => m.id === `match-sf-${idx + 1}`);
     if (match) {
