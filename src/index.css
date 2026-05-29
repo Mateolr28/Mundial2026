@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Sleek Interface colors overrides */
+  --color-slate-950: #0a0e17; /* var(--bg) Deep slate background */
+  --color-slate-900: #161d2b; /* var(--surface) Card and block background */
+  --color-slate-800: #334155; /* var(--border) Grid and separator border */
+  --color-slate-400: #94a3b8; /* var(--text-s) Secondary placeholder / label text */
+  
+  --color-indigo-600: #facc15; /* var(--accent) Primetime energetic yellow buttons */
+  --color-indigo-500: #fde047; /* Hover yellow indicator */
+  --color-indigo-400: #facc15; /* Anchor highlight texts */
+  --color-indigo-300: #fef08a; /* Softest yellow */
+  
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background-color: #0a0e17;
+  color: #ffffff;
+}
+
+/* Custom premium styles for sleek scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #facc15;
+}

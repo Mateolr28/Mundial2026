@@ -1,0 +1,6 @@
+{
+  "name": "Simulador Mundial FIFA 2026",
+  "description": "Simulador completo y oficial de la Copa Mundial de la FIFA 2026 con fase de grupos, mejores terceros, llaves de eliminación, estadísticas y exportación Excel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
